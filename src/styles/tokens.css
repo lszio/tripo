@@ -1,0 +1,15 @@
+:root {
+  color: #302521;
+  background: #f7efe3;
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  --canvas: #f7efe3;
+  --paper: #fffaf2;
+  --ink: #302521;
+  --muted: #786963;
+  --line: #e6d6c3;
+  --accent: #67544a;
+  --accent-hover: #493a34;
+  --accent-soft: #eee5db;
+  --gold: #a88368;
+  --danger: #a44137;
+}
