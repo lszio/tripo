@@ -11,6 +11,7 @@ describe("trip settings", () => {
     render(<RoadbookWorkspace trip={trip} onCommit={() => undefined} />);
 
     await user.click(screen.getByRole("button", { name: "编辑旅行" }));
+    expect(screen.getByTestId("drawer-layer").parentElement).toBe(document.body);
     await user.clear(screen.getByLabelText("旅行名称"));
     await user.type(screen.getByLabelText("旅行名称"), "维也纳周末");
     await user.click(screen.getByRole("button", { name: "保存旅行设置" }));
@@ -32,7 +33,9 @@ describe("trip settings", () => {
     await user.type(screen.getByLabelText("结束日期"), "2026-10-03");
     await user.click(screen.getByRole("button", { name: "保存旅行设置" }));
 
-    expect(screen.getByRole("dialog", { name: "日期范围变更" })).not.toBeNull();
+    const dialog = screen.getByRole("dialog", { name: "日期范围变更" });
+    expect(dialog).not.toBeNull();
+    expect(screen.getByTestId("modal-layer").parentElement).toBe(document.body);
     await user.click(screen.getByRole("button", { name: "保留排期" }));
     expect(screen.getByText("未纳入当前行程")).not.toBeNull();
   });

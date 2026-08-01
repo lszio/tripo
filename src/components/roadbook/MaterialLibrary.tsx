@@ -1,6 +1,7 @@
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Activity } from "../../domain/roadbook";
+import { imageCropStyle } from "./ImageCropEditor";
 
 type MaterialLibraryProps = {
   activities: Activity[];
@@ -14,7 +15,7 @@ function SortableMaterial({ activity, onPreviewActivity, onDeleteActivity }: { a
   const price = activity.defaultPrice ? `${activity.defaultPrice.currency} ${activity.defaultPrice.amount}` : undefined;
   return (
     <div className="material-card" ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} {...attributes}>
-      <div aria-hidden="true" className="material-card-media" style={activity.image ? { backgroundImage: `url("${activity.image}")` } : undefined}>
+      <div aria-hidden="true" className="material-card-media" style={activity.image ? { backgroundImage: `url("${activity.image}")`, ...imageCropStyle(activity.imageCrop) } : undefined}>
         {!activity.image && <span>{activity.name.slice(0, 1)}</span>}
       </div>
       <button aria-label={activity.name} onDoubleClick={() => onPreviewActivity(activity.id)} type="button">

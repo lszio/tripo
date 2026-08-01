@@ -100,6 +100,17 @@ describe("DayTimeline", () => {
     expect(screen.getByTestId("scheduled-activity").getAttribute("style")).toContain("hallstatt.jpg");
   });
 
+  it("assigns compact and regular layouts to 30- and 90-minute timeline cards", () => {
+    const trip = createDemoArchive().travels[0].roadbook;
+    trip.schedule[0].durationSlots = 1;
+    trip.schedule.push({ id: "ninety-minutes", type: "activity", activityId: "activity-hallstatt", dayId: "day-1", startSlot: 22, durationSlots: 3, isTimeLocked: false });
+
+    renderTimeline(<DayTimeline dayId="day-1" onMove={() => undefined} onResize={() => undefined} onSchedule={() => undefined} trip={trip} />);
+
+    expect(document.querySelector('[data-schedule-id="schedule-hallstatt"]')?.getAttribute("data-layout")).toBe("compact");
+    expect(document.querySelector('[data-schedule-id="ninety-minutes"]')?.getAttribute("data-layout")).toBe("regular");
+  });
+
   it("opens schedule previews when a timeline card is double-clicked", async () => {
     const user = userEvent.setup();
     const trip = createDemoArchive().travels[0].roadbook;

@@ -12,12 +12,19 @@ export type Location = {
   longitude?: number;
 };
 
+export type ImageCrop = {
+  zoom: number;
+  positionX: number;
+  positionY: number;
+};
+
 export type Activity = {
   id: string;
   type: "activity";
   name: string;
   location?: Location;
   image?: string;
+  imageCrop?: ImageCrop;
   defaultPrice?: Price;
   tags?: string[];
   note?: string;

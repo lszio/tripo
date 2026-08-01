@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { NodeDetailDrawer } from "../../src/components/roadbook/NodeDetailDrawer";
@@ -38,6 +38,21 @@ describe("NodeDetailDrawer", () => {
       tags: ["景点", "湖区"],
       defaultPrice: expect.objectContaining({ amount: 120 }),
       url: "https://example.com/booking"
+    }));
+  });
+
+  it("provides a crop preview and persists the chosen image framing", async () => {
+    const user = userEvent.setup();
+    const activity = { ...createDemoArchive().travels[0].roadbook.activities[0], image: "https://example.com/photo.jpg" };
+    const onSave = vi.fn();
+
+    render(<NodeDetailDrawer activity={activity} onClose={() => undefined} onSave={onSave} />);
+    expect(screen.getByLabelText("背景裁剪预览")).not.toBeNull();
+    fireEvent.change(screen.getByLabelText("图片缩放"), { target: { value: "1.4" } });
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      imageCrop: expect.objectContaining({ zoom: 1.4 })
     }));
   });
 });

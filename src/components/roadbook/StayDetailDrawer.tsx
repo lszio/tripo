@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Location, Price, StayNode } from "../../domain/roadbook";
 import { OpenStreetMapLink } from "./OpenStreetMapLink";
 import { LocationPicker } from "./LocationPicker";
+import { ModalLayer } from "./ModalLayer";
 
 type StayDraft = {
   name: string;
@@ -24,7 +25,7 @@ export function StayDetailDrawer({ stay, onClose, onSave }: { stay: StayNode; on
   const priceAmount = Number(draft.priceAmount);
   const price = draft.priceAmount.trim() && Number.isFinite(priceAmount) ? { amount: priceAmount, currency: draft.priceCurrency.trim() || "CNY", unit: draft.priceUnit } : undefined;
   return (
-    <aside aria-label="住宿详情" className="detail-drawer" role="dialog">
+    <ModalLayer variant="drawer"><aside aria-label="住宿详情" className="detail-drawer" role="dialog">
       <header><h2>住宿详情</h2><button aria-label="关闭住宿详情" onClick={onClose} type="button">×</button></header>
       <label>住宿名称<input aria-label="住宿名称" onChange={event => update("name", event.target.value)} value={draft.name} /></label>
       <LocationPicker label="住宿地点" onChange={location => setDraft(current => ({ ...current, location }))} value={draft.location} />
@@ -34,6 +35,6 @@ export function StayDetailDrawer({ stay, onClose, onSave }: { stay: StayNode; on
       <label>计价方式<select aria-label="住宿计价方式" onChange={event => update("priceUnit", event.target.value as Price["unit"])} value={draft.priceUnit}><option value="total">总价</option><option value="person">每人</option><option value="night">每晚</option></select></label>
       <label>备注<textarea aria-label="住宿备注" onChange={event => update("note", event.target.value)} value={draft.note} /></label>
       <footer><button onClick={onClose} type="button">取消</button><button disabled={!draft.name.trim()} onClick={() => onSave({ ...stay, name: draft.name.trim(), location: draft.location, checkIn: draft.checkIn || undefined, checkOut: draft.checkOut || undefined, price, note: draft.note.trim() || undefined })} type="button">保存</button></footer>
-    </aside>
+    </aside></ModalLayer>
   );
 }

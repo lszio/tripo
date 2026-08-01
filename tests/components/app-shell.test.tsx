@@ -10,6 +10,19 @@ describe("RoadbookApp", () => {
 
     expect(screen.getByRole("link", { name: "我的旅行" })).not.toBeNull();
     expect(screen.getByRole("link", { name: "旅行记录" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "访客：旅行者" })).not.toBeNull();
+  });
+
+  it("persists a local guest nickname", async () => {
+    const user = userEvent.setup();
+    render(<RoadbookApp initialArchive={createDemoArchive()} />);
+
+    await user.click(screen.getByRole("button", { name: "访客：旅行者" }));
+    await user.clear(screen.getByLabelText("访客昵称"));
+    await user.type(screen.getByLabelText("访客昵称"), "小林");
+    await user.click(screen.getByRole("button", { name: "保存访客资料" }));
+
+    expect(screen.getByRole("button", { name: "访客：小林" })).not.toBeNull();
   });
 
   it("persists a trip rename from the roadbook settings", async () => {

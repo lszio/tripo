@@ -2,6 +2,7 @@ import { useState } from "react";
 import { calculateTripBudget } from "../../domain/budget";
 import { getCalendarDates } from "../../domain/calendar-days";
 import type { Trip } from "../../domain/roadbook";
+import { ModalLayer } from "./ModalLayer";
 
 type TripHeaderProps = {
   trip: Trip;
@@ -56,21 +57,25 @@ export function TripHeader({ trip, onSave }: TripHeaderProps) {
       </section>
       <div className="trip-header-actions"><button onClick={open} type="button">旅行设置</button></div>
       {isOpen && (
-        <aside aria-label="旅行设置" className="detail-drawer" role="dialog">
-          <header><h2>旅行设置</h2><button aria-label="关闭旅行设置" onClick={() => setIsOpen(false)} type="button">×</button></header>
-          <label>旅行名称<input aria-label="旅行名称" onChange={event => setDraft({ ...draft, name: event.target.value })} value={draft.name} /></label>
-          <label>开始日期<input aria-label="开始日期" onChange={event => setDraft({ ...draft, startDate: event.target.value })} type="date" value={draft.startDate} /></label>
-          <label>结束日期<input aria-label="结束日期" onChange={event => setDraft({ ...draft, endDate: event.target.value })} type="date" value={draft.endDate} /></label>
-          <footer><button onClick={() => setIsOpen(false)} type="button">取消</button><button disabled={!isValid} onClick={submit} type="button">保存旅行设置</button></footer>
-        </aside>
+        <ModalLayer variant="drawer">
+          <aside aria-label="旅行设置" className="detail-drawer" role="dialog">
+            <header><h2>旅行设置</h2><button aria-label="关闭旅行设置" onClick={() => setIsOpen(false)} type="button">×</button></header>
+            <label>旅行名称<input aria-label="旅行名称" onChange={event => setDraft({ ...draft, name: event.target.value })} value={draft.name} /></label>
+            <label>开始日期<input aria-label="开始日期" onChange={event => setDraft({ ...draft, startDate: event.target.value })} type="date" value={draft.startDate} /></label>
+            <label>结束日期<input aria-label="结束日期" onChange={event => setDraft({ ...draft, endDate: event.target.value })} type="date" value={draft.endDate} /></label>
+            <footer><button onClick={() => setIsOpen(false)} type="button">取消</button><button disabled={!isValid} onClick={submit} type="button">保存旅行设置</button></footer>
+          </aside>
+        </ModalLayer>
       )}
       {isConfirming && (
-        <aside aria-label="日期范围变更" className="confirmation-dialog" role="dialog">
-          <h2>日期范围变更</h2>
-          <p>有 {affectedDays.length} 个日期和关联排期将离开当前行程。</p>
-          <button onClick={() => resolve("keep")} type="button">保留排期</button>
-          <button onClick={() => resolve("delete")} type="button">删除排期</button>
-        </aside>
+        <ModalLayer>
+          <aside aria-label="日期范围变更" className="confirmation-dialog" role="dialog">
+            <h2>日期范围变更</h2>
+            <p>有 {affectedDays.length} 个日期和关联排期将离开当前行程。</p>
+            <button onClick={() => resolve("keep")} type="button">保留排期</button>
+            <button onClick={() => resolve("delete")} type="button">删除排期</button>
+          </aside>
+        </ModalLayer>
       )}
     </header>
   );

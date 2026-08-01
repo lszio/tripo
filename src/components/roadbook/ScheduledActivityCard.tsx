@@ -3,6 +3,7 @@ import { useRef } from "react";
 import type { Activity, ActivitySchedule } from "../../domain/roadbook";
 import { timeFromSlot } from "../../domain/timeline-engine";
 import { durationFromPointerDelta } from "../../domain/timeline-resize";
+import { imageCropStyle } from "./ImageCropEditor";
 
 type ScheduledActivityCardProps = {
   activity?: Activity;
@@ -23,11 +24,12 @@ export function ScheduledActivityCard({ activity, schedule, timelineStartSlot = 
   const price = schedule.priceOverride ?? activity?.defaultPrice;
   const note = schedule.noteOverride ?? activity?.note;
   const showsDetails = schedule.durationSlots >= 4;
+  const layout = schedule.durationSlots === 1 ? "compact" : schedule.durationSlots <= 3 ? "regular" : "expanded";
   const style = {
     top: `${(schedule.startSlot - timelineStartSlot) * 36}px`,
     height: `${schedule.durationSlots * 36}px`,
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    ...(activity?.image ? { backgroundImage: `linear-gradient(115deg, rgba(37, 27, 31, .96), rgba(58, 31, 30, .76)), url("${activity.image}")` } : {})
+    ...(activity?.image ? { backgroundImage: `linear-gradient(115deg, rgba(37, 27, 31, .96), rgba(58, 31, 30, .76)), url("${activity.image}")`, ...imageCropStyle(activity.imageCrop) } : {})
   };
 
   function startResize(event: React.PointerEvent<HTMLButtonElement>) {
@@ -43,7 +45,7 @@ export function ScheduledActivityCard({ activity, schedule, timelineStartSlot = 
   }
 
   return (
-    <article className="scheduled-activity-card" data-compact={schedule.durationSlots < 2} data-expanded={showsDetails} data-schedule-id={schedule.id} data-testid="scheduled-activity" onDoubleClick={() => onOpen(schedule.id)} ref={setNodeRef} style={style} {...attributes}>
+    <article className="scheduled-activity-card" data-compact={schedule.durationSlots < 2} data-expanded={showsDetails} data-layout={layout} data-schedule-id={schedule.id} data-testid="scheduled-activity" onDoubleClick={() => onOpen(schedule.id)} ref={setNodeRef} style={style} {...attributes}>
       <div className="timeline-card-content">
         <div className="timeline-card-heading">
           <div className="timeline-card-title-group">

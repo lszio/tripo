@@ -14,6 +14,8 @@ describe("DayNavigator", () => {
     ];
 
     render(<DayNavigator canPaste days={days} onCopyDay={onCopy} onPasteDay={onPaste} onSelect={() => undefined} selectedDayId="day-1" />);
+    expect(screen.getByRole("button", { name: "复制 10/1周四" }).className).toContain("day-plan-icon");
+    expect(screen.getByRole("button", { name: "粘贴到 10/2周五" }).className).toContain("day-plan-icon");
     await user.click(screen.getByRole("button", { name: "复制 10/1周四" }));
     await user.click(screen.getByRole("button", { name: "粘贴到 10/2周五" }));
 

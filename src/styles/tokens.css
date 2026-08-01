@@ -1,15 +1,16 @@
 :root {
-  color: #302521;
-  background: #f7efe3;
+  color: #252321;
+  background: #f2f2f0;
+  color-scheme: light;
   font-family: Inter, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-  --canvas: #f7efe3;
-  --paper: #fffaf2;
-  --ink: #302521;
-  --muted: #786963;
-  --line: #e6d6c3;
-  --accent: #67544a;
-  --accent-hover: #493a34;
-  --accent-soft: #eee5db;
-  --gold: #a88368;
-  --danger: #a44137;
+  --canvas: #f2f2f0;
+  --paper: #ffffff;
+  --ink: #252321;
+  --muted: #77736e;
+  --line: rgba(37, 35, 33, .13);
+  --accent: #a95c49;
+  --accent-hover: #8e4838;
+  --accent-soft: #f2e4de;
+  --gold: #c99368;
+  --danger: #c85959;
 }

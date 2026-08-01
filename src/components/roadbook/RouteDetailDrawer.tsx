@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { ActivitySchedule, Price, RouteSchedule, Trip, Transport } from "../../domain/roadbook";
 import { timeFromSlot } from "../../domain/timeline-engine";
+import { ModalLayer } from "./ModalLayer";
 
 type RouteDraft = {
   fromScheduleId: string;
@@ -28,7 +29,7 @@ export function RouteDetailDrawer({ trip, route, onClose, onSave }: { trip: Trip
   const durationSlots = Math.max(1, Math.min(48 - startSlot, Number(draft.durationSlots) || 1));
 
   return (
-    <aside aria-label="交通详情" className="detail-drawer" role="dialog">
+    <ModalLayer variant="drawer"><aside aria-label="交通详情" className="detail-drawer" role="dialog">
       <header><h2>交通详情</h2><button aria-label="关闭交通详情" onClick={onClose} type="button">×</button></header>
       <label>出发活动<select aria-label="出发活动" onChange={event => update("fromScheduleId", event.target.value)} value={draft.fromScheduleId}><option value="">未关联活动</option>{activities.map(schedule => <option key={schedule.id} value={schedule.id}>{timeFromSlot(schedule.startSlot)} · {activityById.get(schedule.activityId)?.name ?? "已删除活动"}</option>)}</select></label>
       <label>到达活动<select aria-label="到达活动" onChange={event => update("toScheduleId", event.target.value)} value={draft.toScheduleId}><option value="">未关联活动</option>{activities.map(schedule => <option key={schedule.id} value={schedule.id}>{timeFromSlot(schedule.startSlot)} · {activityById.get(schedule.activityId)?.name ?? "已删除活动"}</option>)}</select></label>
@@ -37,6 +38,6 @@ export function RouteDetailDrawer({ trip, route, onClose, onSave }: { trip: Trip
       <div className="drawer-field-row"><label>价格<input aria-label="交通价格" inputMode="decimal" onChange={event => update("priceAmount", event.target.value)} value={draft.priceAmount} /></label><label>价格币种<input aria-label="交通价格币种" onChange={event => update("priceCurrency", event.target.value)} value={draft.priceCurrency} /></label></div>
       <label>计价方式<select aria-label="交通计价方式" onChange={event => update("priceUnit", event.target.value)} value={draft.priceUnit}><option value="total">总价</option><option value="person">每人</option></select></label>
       <footer><button onClick={onClose} type="button">取消</button><button onClick={() => onSave({ ...route, fromScheduleId: draft.fromScheduleId || undefined, toScheduleId: draft.toScheduleId || undefined, transport: draft.transport, startSlot, durationSlots, price, routeType: "manual", status: "valid" })} type="button">保存</button></footer>
-    </aside>
+    </aside></ModalLayer>
   );
 }

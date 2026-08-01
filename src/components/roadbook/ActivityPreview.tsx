@@ -1,11 +1,12 @@
 import type { Activity } from "../../domain/roadbook";
+import { imageCropStyle } from "./ImageCropEditor";
 import { OpenStreetMapLink } from "./OpenStreetMapLink";
 
 export function ActivityPreview({ activity, onEdit, onClose }: { activity: Activity; onEdit: () => void; onClose: () => void }) {
   const price = activity.defaultPrice ? `${activity.defaultPrice.currency} ${activity.defaultPrice.amount}` : "未设置预算";
   return (
     <section aria-label="活动预览" className="activity-preview">
-      <div className="activity-preview-hero" style={activity.image ? { backgroundImage: `linear-gradient(180deg, rgba(30, 20, 22, .2), rgba(30, 20, 22, .92)), url("${activity.image}")` } : undefined}>
+      <div className="activity-preview-hero" style={activity.image ? { backgroundImage: `linear-gradient(180deg, rgba(30, 20, 22, .2), rgba(30, 20, 22, .92)), url("${activity.image}")`, ...imageCropStyle(activity.imageCrop) } : undefined}>
         <header><p className="eyebrow">活动详情</p><button aria-label="关闭预览" onClick={onClose} type="button">×</button></header>
         <div className="activity-preview-title"><h2>{activity.name}</h2><p>{activity.location?.name ?? "未设置位置"}</p></div>
       </div>

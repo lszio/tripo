@@ -21,6 +21,7 @@ export function ScheduledStayCard({ stay, schedule, timelineStartSlot = 0, onRes
     height: `${schedule.durationSlots * 36}px`,
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined
   };
+  const layout = schedule.durationSlots === 1 ? "compact" : schedule.durationSlots <= 3 ? "regular" : "expanded";
 
   function startResize(event: React.PointerEvent<HTMLButtonElement>) {
     event.stopPropagation();
@@ -34,7 +35,7 @@ export function ScheduledStayCard({ stay, schedule, timelineStartSlot = 0, onRes
   }
 
   return (
-    <article className="scheduled-stay-card" data-testid="scheduled-stay" onDoubleClick={() => onOpen(schedule.id)} ref={setNodeRef} style={style} {...attributes}>
+    <article className="scheduled-stay-card" data-layout={layout} data-testid="scheduled-stay" onDoubleClick={() => onOpen(schedule.id)} ref={setNodeRef} style={style} {...attributes}>
       <div className="timeline-card-content">
         <div className="timeline-card-heading"><div className="timeline-card-title-group"><strong>入住 · {stay?.name ?? "已删除住宿"}</strong>{stay?.location?.name && <span className="timeline-card-subtitle">{stay.location.name}</span>}</div><time className="timeline-card-time">{timeFromSlot(schedule.startSlot)}</time></div>
         <div className="timeline-card-summary"><span><b>时长</b>{schedule.durationSlots * 30} 分钟</span>{stay?.price && <span><b>费用</b>{stay.price.currency} {stay.price.amount}</span>}</div>
