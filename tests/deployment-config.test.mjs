@@ -43,4 +43,12 @@ describe("Dokploy deployment configuration", () => {
     expect(compose).toContain("TINYAUTH_OAUTH_WHITELIST: ${TINYAUTH_OAUTH_WHITELIST}");
     expect(envExample).toBe("APP_DOMAIN=\nAUTH_DOMAIN=\nGOOGLE_CLIENT_ID=\nGOOGLE_CLIENT_SECRET=\nTINYAUTH_OAUTH_WHITELIST=\n");
   });
+
+  it("approves Prisma build scripts for non-interactive Docker installs", async () => {
+    const workspace = await readProjectFile("pnpm-workspace.yaml");
+
+    expect(workspace).toContain("'@prisma/client': true");
+    expect(workspace).toContain("'@prisma/engines': true");
+    expect(workspace).toContain("prisma: true");
+  });
 });
