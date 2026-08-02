@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TravelLibrary } from "./components/library/TravelLibrary";
 import { GuestMenu } from "./components/library/GuestMenu";
 import { RecordWorkspace } from "./components/records/RecordWorkspace";
 import { RoadbookWorkspace } from "./components/roadbook/RoadbookWorkspace";
-import { loadArchive, saveArchive } from "./data/archive-storage";
+import { loadArchive as loadLocalArchive, STORAGE_KEY } from "./data/archive-storage";
+import { createApiArchiveStorage, type ApiArchiveStorage } from "./data/api-archive-storage";
 import { loadLocalGuest, saveLocalGuest } from "./data/local-guest";
 import { parseImportedTravel, serializeTravel } from "./domain/trip-transfer";
 import type { Archive, ArchiveTravel } from "./domain/roadbook";
@@ -12,7 +13,10 @@ type AppRoute = "travels" | "records" | "workspace";
 
 type RoadbookAppProps = {
   initialArchive?: Archive;
+  archiveStorage?: ApiArchiveStorage;
 };
+
+const browserArchiveStorage = createApiArchiveStorage((input, init) => globalThis.fetch(input, init));
 
 function readTravelFile(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -23,14 +27,66 @@ function readTravelFile(file: File) {
   });
 }
 
-export function RoadbookApp({ initialArchive }: RoadbookAppProps) {
-  const [archive, setArchive] = useState(() => initialArchive ?? loadArchive().archive);
+function loadExistingLocalArchive() {
+  if (!globalThis.localStorage.getItem(STORAGE_KEY)) return undefined;
+  const result = loadLocalArchive();
+  return result.recoveryError ? undefined : result.archive;
+}
+
+export function RoadbookApp({ initialArchive, archiveStorage = browserArchiveStorage }: RoadbookAppProps) {
+  const [archive, setArchive] = useState<Archive | undefined>(initialArchive);
+  const [loadState, setLoadState] = useState<"loading" | "failed" | "ready">(initialArchive ? "ready" : "loading");
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [guest, setGuest] = useState(() => loadLocalGuest());
   const [route, setRoute] = useState<AppRoute>("travels");
   const [workspaceMode, setWorkspaceMode] = useState<"roadbook" | "records">("roadbook");
-  const [selectedTravelId, setSelectedTravelId] = useState(archive.selectedTravelId ?? archive.travels[0]?.id);
+  const [selectedTravelId, setSelectedTravelId] = useState(initialArchive?.selectedTravelId ?? initialArchive?.travels[0]?.id);
   const [transferNotice, setTransferNotice] = useState("");
-  const selectedTravel = archive.travels.find(travel => travel.id === selectedTravelId);
+  const selectedTravel = archive?.travels.find(travel => travel.id === selectedTravelId);
+
+  useEffect(() => {
+    if (initialArchive) return;
+
+    let active = true;
+    async function loadRemoteArchive() {
+      setLoadState("loading");
+      setLoadError("");
+
+      try {
+        let remoteArchive = await archiveStorage.loadArchive();
+        const localArchive = loadExistingLocalArchive();
+
+        if (localArchive?.travels.length) {
+          try {
+            await archiveStorage.importLocalArchiveOnce(localArchive);
+            const refreshedArchive = await archiveStorage.loadArchive();
+            const preservedSelection = localArchive.selectedTravelId && refreshedArchive.travels.some(travel => travel.id === localArchive.selectedTravelId)
+              ? localArchive.selectedTravelId
+              : refreshedArchive.selectedTravelId;
+            remoteArchive = { ...refreshedArchive, selectedTravelId: preservedSelection };
+            globalThis.localStorage.removeItem(STORAGE_KEY);
+          } catch (error) {
+            if (active) setTransferNotice(error instanceof Error ? error.message : "导入本地旅行数据失败");
+          }
+        }
+
+        if (!active) return;
+        setArchive(remoteArchive);
+        setSelectedTravelId(current => remoteArchive.travels.some(travel => travel.id === current)
+          ? current
+          : remoteArchive.selectedTravelId ?? remoteArchive.travels[0]?.id);
+        setLoadState("ready");
+      } catch (error) {
+        if (!active) return;
+        setLoadError(error instanceof Error ? error.message : "加载旅行数据失败");
+        setLoadState("failed");
+      }
+    }
+
+    void loadRemoteArchive();
+    return () => { active = false; };
+  }, [archiveStorage, initialArchive, loadAttempt]);
 
   function openTravel(travelId: string, mode: "roadbook" | "records") {
     setSelectedTravelId(travelId);
@@ -42,20 +98,24 @@ export function RoadbookApp({ initialArchive }: RoadbookAppProps) {
     setRoute(nextRoute);
   }
 
-  function commitRoadbook(tripId: string, roadbook: Archive["travels"][number]["roadbook"]) {
-    setArchive(current => {
-      const next = {
-        ...current,
-        travels: current.travels.map(travel => travel.id === tripId ? {
-          ...travel,
-          title: roadbook.name,
-          dates: `${roadbook.startDate} 至 ${roadbook.endDate}`,
-          roadbook
-        } : travel)
-      };
-      saveArchive(next);
-      return next;
-    });
+  async function commitRoadbook(tripId: string, roadbook: Archive["travels"][number]["roadbook"]) {
+    if (!archive) return;
+    const changedTravel = archive.travels.find(travel => travel.id === tripId);
+    if (!changedTravel) return;
+
+    const travel = {
+      ...changedTravel,
+      title: roadbook.name,
+      dates: `${roadbook.startDate} 至 ${roadbook.endDate}`,
+      roadbook
+    };
+    setArchive({ ...archive, travels: archive.travels.map(item => item.id === tripId ? travel : item) });
+
+    try {
+      await archiveStorage.saveTravel(travel);
+    } catch (error) {
+      setTransferNotice(error instanceof Error ? error.message : "保存旅行数据失败");
+    }
   }
 
   function saveGuest(name: string) {
@@ -77,19 +137,36 @@ export function RoadbookApp({ initialArchive }: RoadbookAppProps) {
 
   async function importTravel(file: File) {
     try {
+      if (!archive) return;
       const imported = parseImportedTravel(await readTravelFile(file), new Set(archive.travels.map(travel => travel.id)));
-      setArchive(current => {
-        const next = { ...current, travels: [...current.travels, imported], selectedTravelId: imported.id };
-        saveArchive(next);
-        return next;
-      });
+      setArchive({ ...archive, travels: [...archive.travels, imported], selectedTravelId: imported.id });
       setSelectedTravelId(imported.id);
       setRoute("travels");
-      setTransferNotice(`已导入“${imported.title}”`);
+      try {
+        await archiveStorage.saveTravel(imported);
+        setTransferNotice(`已导入“${imported.title}”`);
+      } catch (error) {
+        setTransferNotice(error instanceof Error ? error.message : "保存旅行数据失败");
+      }
     } catch (error) {
       setTransferNotice(error instanceof Error ? error.message : "导入旅行方案失败");
     }
   }
+
+  if (loadState === "loading") {
+    return <main className="app-main" role="status">正在加载旅行数据…</main>;
+  }
+
+  if (loadState === "failed") {
+    return (
+      <main className="app-main">
+        <p role="alert">{loadError}</p>
+        <button type="button" onClick={() => setLoadAttempt(current => current + 1)}>重试加载</button>
+      </main>
+    );
+  }
+
+  if (!archive) return null;
 
   return (
     <div className="app-shell">

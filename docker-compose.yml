@@ -1,0 +1,53 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: file:/data/travel.db
+      PORT: 3000
+    volumes:
+      - travel-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.go-travel.rule: Host(`${APP_DOMAIN}`)
+      traefik.http.routers.go-travel.entrypoints: websecure
+      traefik.http.routers.go-travel.tls: "true"
+      traefik.http.routers.go-travel.middlewares: tinyauth@docker
+      traefik.http.services.go-travel.loadbalancer.server.port: "3000"
+
+  tinyauth:
+    image: ghcr.io/tinyauthapp/tinyauth:v5
+    restart: unless-stopped
+    environment:
+      TINYAUTH_APPURL: https://${AUTH_DOMAIN}
+      TINYAUTH_DATABASE_PATH: /data/tinyauth.db
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID: ${GOOGLE_CLIENT_ID}
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET: ${GOOGLE_CLIENT_SECRET}
+      TINYAUTH_OAUTH_WHITELIST: ${TINYAUTH_OAUTH_WHITELIST}
+      TINYAUTH_AUTH_TRUSTEDPROXIES: 172.16.0.0/12
+    volumes:
+      - tinyauth-data:/data
+    healthcheck:
+      test: ["CMD", "tinyauth", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.tinyauth.rule: Host(`${AUTH_DOMAIN}`)
+      traefik.http.routers.tinyauth.entrypoints: websecure
+      traefik.http.routers.tinyauth.tls: "true"
+      traefik.http.services.tinyauth.loadbalancer.server.port: "3000"
+      traefik.http.middlewares.tinyauth.forwardauth.address: http://tinyauth:3000/api/auth/traefik
+      traefik.http.middlewares.tinyauth.forwardauth.authResponseHeaders: "Remote-Email,Remote-Name"
+
+volumes:
+  travel-data:
+  tinyauth-data:
