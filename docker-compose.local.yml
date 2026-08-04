@@ -1,0 +1,28 @@
+services:
+  app:
+    volumes:
+      - ./data/app:/data
+    labels:
+      traefik.http.routers.go-travel.entrypoints: web
+      traefik.http.routers.go-travel.tls: "false"
+
+  tinyauth:
+    environment:
+      TINYAUTH_AUTH_USERSFILE: /data/users
+    volumes:
+      - ./data/tinyauth:/data
+    labels:
+      traefik.http.routers.tinyauth.entrypoints: web
+      traefik.http.routers.tinyauth.tls: "false"
+
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    ports:
+      - 80:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro

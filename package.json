@@ -2,14 +2,19 @@
   "name": "travel-guide-roadbook-editor",
   "private": true,
   "version": "0.1.0",
+  "packageManager": "bun@1.2.6",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "sh -c 'test -f .env.local || cp .env.local.example .env.local; bun run dev:api & api=$!; trap \"kill $api\" EXIT INT TERM; bunx vite'",
+    "dev:api": "mkdir -p data/app && DATABASE_URL=\"file:$PWD/data/app/travel.db\" bunx prisma migrate deploy && DATABASE_URL=\"file:$PWD/data/app/travel.db\" NODE_ENV=development bun --env-file=.env.local --watch server/index.mjs",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "start": "node server/index.mjs"
+    "start": "bun server/index.mjs",
+    "local:up": "mkdir -p data/app data/tinyauth && touch data/tinyauth/users && docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml up --build",
+    "local:down": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml down",
+    "auth:user": "mkdir -p data/tinyauth && touch data/tinyauth/users && docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml run --rm tinyauth user create --interactive"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

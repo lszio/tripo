@@ -4,6 +4,7 @@
 .git
 .pnpm-store
 .superpowers
+data/
 node_modules
 dist
 build

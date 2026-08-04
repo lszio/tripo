@@ -71,9 +71,10 @@ function setPrimaryStayInTrip(trip: Trip, dayId: string, stayId: string, previou
 }
 
 export function createRoadbookStore(initialTrip: Trip, onCommit: (trip: Trip) => void) {
+  const normalizedTrip = reconcileTripDateRange(initialTrip, initialTrip.startDate, initialTrip.endDate, "keep");
   return createStore<RoadbookState>((set, get) => ({
-    trip: initialTrip,
-    selectedDayId: getActiveDays(initialTrip)[0]?.id ?? "",
+    trip: normalizedTrip,
+    selectedDayId: normalizedTrip.days[0]?.id ?? "",
     selectDay: selectedDayId => set({ selectedDayId }),
     copyDayPlan: dayId => {
       const sourceDay = get().trip.days.find(day => day.id === dayId) ?? getActiveDays(get().trip).find(day => day.id === dayId);

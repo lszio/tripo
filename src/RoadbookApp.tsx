@@ -7,6 +7,7 @@ import { loadArchive as loadLocalArchive, STORAGE_KEY } from "./data/archive-sto
 import { createApiArchiveStorage, type ApiArchiveStorage } from "./data/api-archive-storage";
 import { loadLocalGuest, saveLocalGuest } from "./data/local-guest";
 import { parseImportedTravel, serializeTravel } from "./domain/trip-transfer";
+import { getCalendarDates } from "./domain/calendar-days";
 import type { Archive, ArchiveTravel } from "./domain/roadbook";
 
 type AppRoute = "travels" | "records" | "workspace";
@@ -31,6 +32,20 @@ function loadExistingLocalArchive() {
   if (!globalThis.localStorage.getItem(STORAGE_KEY)) return undefined;
   const result = loadLocalArchive();
   return result.recoveryError ? undefined : result.archive;
+}
+
+function createTravel(input: { title: string; destination: string; startDate: string; endDate: string }): ArchiveTravel {
+  const id = `travel-${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+  const days = getCalendarDates(input.startDate, input.endDate).map((date, order) => ({ id: `${id}-day-${date}`, date, order, stays: [], isActive: true }));
+  return {
+    id,
+    title: input.title,
+    destination: input.destination || undefined,
+    dates: `${input.startDate} 至 ${input.endDate}`,
+    status: "planned",
+    records: [],
+    roadbook: { id: `roadbook-${id}`, name: input.title, startDate: input.startDate, endDate: input.endDate, currency: "CNY", people: 1, days, activities: [], schedule: [] }
+  };
 }
 
 export function RoadbookApp({ initialArchive, archiveStorage = browserArchiveStorage }: RoadbookAppProps) {
@@ -153,6 +168,19 @@ export function RoadbookApp({ initialArchive, archiveStorage = browserArchiveSto
     }
   }
 
+  async function createTravelFromLibrary(input: { title: string; destination: string; startDate: string; endDate: string }) {
+    if (!archive) return;
+    const travel = createTravel(input);
+    setArchive({ ...archive, travels: [...archive.travels, travel], selectedTravelId: travel.id });
+    setSelectedTravelId(travel.id);
+    try {
+      await archiveStorage.saveTravel(travel);
+      setTransferNotice(`已创建“${travel.title}”`);
+    } catch (error) {
+      setTransferNotice(error instanceof Error ? error.message : "保存旅行数据失败");
+    }
+  }
+
   if (loadState === "loading") {
     return <main className="app-main" role="status">正在加载旅行数据…</main>;
   }
@@ -179,7 +207,7 @@ export function RoadbookApp({ initialArchive, archiveStorage = browserArchiveSto
         <GuestMenu guest={guest} onSave={saveGuest} />
       </header>
       <main className="app-main">
-        {route === "travels" && <TravelLibrary onExportTravel={exportTravel} onImportTravel={importTravel} travels={archive.travels} onOpenTravel={openTravel} />}
+        {route === "travels" && <TravelLibrary onCreateTravel={createTravelFromLibrary} onExportTravel={exportTravel} onImportTravel={importTravel} travels={archive.travels} onOpenTravel={openTravel} />}
         {route === "records" && <TravelLibrary travels={archive.travels} recordsOnly onOpenTravel={openTravel} />}
         {route === "workspace" && selectedTravel && (
           workspaceMode === "records"

@@ -173,6 +173,20 @@ describe("authenticated travel API", () => {
     expect(response.json()).toEqual({ error: "UNAUTHENTICATED", message: "需要先登录" });
   });
 
+  it("uses the configured development identity only when explicitly enabled", async () => {
+    const response = await inject(createApp({
+      prisma: createFakePrisma(),
+      distDir: false,
+      devEmail: "developer@go-travel.test"
+    }), {
+      method: "GET",
+      url: "/api/me"
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().user.email).toBe("developer@go-travel.test");
+  });
+
   it("rejects invalid proxy identity headers", async () => {
     const response = await inject(createApp({ prisma: createFakePrisma(), distDir: false }), {
       method: "GET",

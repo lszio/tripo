@@ -62,7 +62,7 @@ function requireTravelId(params) {
   return travelId;
 }
 
-export function createApp({ prisma, distDir = false }) {
+export function createApp({ prisma, distDir = false, devEmail }) {
   const app = Fastify();
   const repository = createTravelRepository(prisma);
 
@@ -70,28 +70,30 @@ export function createApp({ prisma, distDir = false }) {
 
   app.get("/health", async () => ({ status: "ok" }));
 
-  app.get("/api/me", async (request) => ({ user: await resolveCurrentUser(request, prisma) }));
+  const currentUser = (request) => resolveCurrentUser(request, prisma, { devEmail });
+
+  app.get("/api/me", async (request) => ({ user: await currentUser(request) }));
 
   app.get("/api/travels", async (request) => {
-    const user = await resolveCurrentUser(request, prisma);
+    const user = await currentUser(request);
     return { travels: await repository.listForUser(user.id) };
   });
 
   app.get("/api/travels/:id", async (request) => {
-    const user = await resolveCurrentUser(request, prisma);
+    const user = await currentUser(request);
     const travel = await repository.findForUser(user.id, requireTravelId(request.params));
     if (!travel) throw new NotFoundError();
     return { travel };
   });
 
   app.post("/api/travels", async (request, reply) => {
-    const user = await resolveCurrentUser(request, prisma);
+    const user = await currentUser(request);
     const travel = await repository.replaceForUser(user.id, requireTravelPayload(request.body));
     return reply.code(201).send({ travel });
   });
 
   app.put("/api/travels/:id", async (request) => {
-    const user = await resolveCurrentUser(request, prisma);
+    const user = await currentUser(request);
     const travelId = requireTravelId(request.params);
     const travel = requireTravelPayload(request.body);
     if (travel.id !== travelId) throw new ValidationError("旅行 ID 不匹配");
@@ -99,14 +101,14 @@ export function createApp({ prisma, distDir = false }) {
   });
 
   app.delete("/api/travels/:id", async (request, reply) => {
-    const user = await resolveCurrentUser(request, prisma);
+    const user = await currentUser(request);
     const deleted = await repository.deleteForUser(user.id, requireTravelId(request.params));
     if (!deleted) throw new NotFoundError();
     return reply.code(204).send();
   });
 
   app.post("/api/import/local-archive", async (request) => {
-    const user = await resolveCurrentUser(request, prisma);
+    const user = await currentUser(request);
     return repository.importArchiveOnce(user.id, requireArchive(request.body));
   });
 

@@ -7,11 +7,37 @@ Go Travel 是一个受 Google 登录保护的中文自由行路书编辑器。�
 在项目目录运行：
 
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
 然后访问终端显示的本地地址。项目使用 Leaflet 与 OpenStreetMap 瓦片显示带坐标的行程地点；不需要地图 API Key，但运行时需要网络加载地图瓦片。
+
+`bun run dev` 会同时启动 Vite 和本地 Fastify API，数据写入 `data/app/travel.db`。它仅在开发环境使用 `.env.local` 中的 `DEV_AUTH_EMAIL` 作为身份；生产环境不会读取该变量，仍必须通过 TinyAuth 登录。
+
+## 本地服务与账号
+
+先复制本地环境模板：
+
+```bash
+cp .env.local.example .env.local
+```
+
+然后一键启动应用、TinyAuth 和本地 Traefik：
+
+```bash
+bun run local:up
+```
+
+访问 `http://travel.localhost`。开发数据库位于 `data/app/travel.db`，TinyAuth 数据与本地账号文件位于 `data/tinyauth/`；整个 `data/` 目录和 `.env.local` 均不会提交到 Git。
+
+创建本地登录账号：
+
+```bash
+bun run auth:user
+```
+
+选择 Docker 格式后，命令会输出 `用户名:bcrypt密码哈希`。将其追加到 `data/tinyauth/users`，多个账号使用英文逗号分隔，然后执行 `bun run local:down` 和 `bun run local:up` 使其生效。Google OAuth 仍可在 `.env.local` 中配置。
 
 ## 使用方式
 
